@@ -1,11 +1,33 @@
 local neorg = require("neorg.core")
-local config = neorg.config
+local config, lib, log, modules = neorg.config, neorg.lib, neorg.log, neorg.modules
 
 local module = neorg.modules.create("external.chronicle")
 
 
 module.load = function ()
     print("Hello world")
+
+    -- modules.await("core.neorgcmd", function (neorgcmd)
+    --     neorgcmd.add_commands_from_table({
+    --         test = {
+    --             min_args = 1,
+    --             max_args = 2,
+    --             subcommands = {
+    --                 print_thing = { args = 0, name = ""}
+    --             }
+    --         }
+    --     })
+    -- end)
+end
+
+module.setup = function ()
+    return {
+        success = true,
+        requires = {
+            "core.dirman",
+            "core.integrations.treesitter",
+        },
+    }
 end
 
 module.private = {
@@ -94,8 +116,16 @@ module.config.private = {
 
 module.on_event = function (event)
     if vim.tbl_contains( { "core.keybinds", "core.neorgcmd" }, event.split_type[1] ) then
-        -- pass
+        if event.split_type[2] == "chronicle.test" then
+            print(module.private.get_example_path("%Y-%m-%d.norg"))
+        end
     end
 end
+
+module.events.subscribed = {
+    ["core.neorgcmd"] = {
+        ["chronicle.test"] = true,
+    },
+}
 
 return module
