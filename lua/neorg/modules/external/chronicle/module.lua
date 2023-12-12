@@ -5,8 +5,8 @@ local module = neorg.modules.create("external.chronicle")
 
 
 module.load = function ()
-    print("Hello world")
 
+    module.private.open(os.clock(), "daily")
     -- modules.await("core.neorgcmd", function (neorgcmd)
     --     neorgcmd.add_commands_from_table({
     --         test = {
@@ -21,7 +21,6 @@ module.load = function ()
 end
 
 module.setup = function ()
-    print("what up")
     return {
         success = true,
         requires = {
@@ -55,6 +54,9 @@ module.private = {
     end,
 
     open = function (time, mode)
+        local workspace = module.config.public.workspace or module.required["core.dirman"].get_current_workspace()[1]
+        local directory = module.config.public.directory
+
         local template = module.config.private.templates[mode]
 
         local path_format = module.private.get_template_path(
@@ -65,12 +67,20 @@ module.private = {
             path_format
         )
 
+        local workspace_path = module.required["core.dirman"].get_workspace(workspace)
+
+        local file_exists = module.required["core.dirman"].file_exists(
+            workspace_path .. config.pathsep .. directory .. config.pathsep .. path
+        )
+        print(file_exists)
+        print(workspace_path .. config.pathsep .. directory .. config.pathsep .. pat)
 
     end,
 }
 
 module.config.public = {
-    folder = "chronicle",
+    directory = "chronicle",
+    workspace = nil,
     daily = {
         use_template = true,
         template_name = "",
