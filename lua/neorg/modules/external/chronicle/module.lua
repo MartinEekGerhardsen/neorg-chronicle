@@ -21,6 +21,7 @@ module.load = function ()
 end
 
 module.setup = function ()
+    print("what up")
     return {
         success = true,
         requires = {
