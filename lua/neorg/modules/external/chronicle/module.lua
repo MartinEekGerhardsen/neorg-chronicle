@@ -5,24 +5,30 @@ local module = neorg.modules.create("external.chronicle")
 
 
 module.load = function ()
-    print(module.private.get_example_path(module.config.public.daily.template_path))
-    print(module.private.get_example_path(module.config.public.weekly.template_path))
-    print(module.private.get_example_path(module.config.public.monthly.template_path))
-    print(module.private.get_example_path(module.config.public.quarterly.template_path))
-    print(module.private.get_example_path(module.config.public.yearly.template_path))
+    -- print(module.private.get_example_path(module.config.public.daily.template_path))
+    -- print(module.private.get_example_path(module.config.public.weekly.template_path))
+    -- print(module.private.get_example_path(module.config.public.monthly.template_path))
+    -- print(module.private.get_example_path(module.config.public.quarterly.template_path))
+    -- print(module.private.get_example_path(module.config.public.yearly.template_path))
 
-    -- module.private.open(os.time(), "daily")
-    -- modules.await("core.neorgcmd", function (neorgcmd)
-    --     neorgcmd.add_commands_from_table({
-    --         test = {
-    --             min_args = 1,
-    --             max_args = 2,
-    --             subcommands = {
-    --                 print_thing = { args = 0, name = ""}
-    --             }
-    --         }
-    --     })
-    -- end)
+    module.required["core.neorgcmd"].add_commands_from_table({
+        chronicle = {
+            args = 1,
+            -- min_args = 1,
+            -- max_args = 4,
+            subcommands = {
+                daily = {
+                    args = 1,
+                    subcommands = {
+                        today = {
+                            args = 0,
+                            name = "external.chronicle.daily.today"
+                        },
+                    },
+                },
+            },
+        }
+    })
 end
 
 module.setup = function ()
@@ -30,88 +36,86 @@ module.setup = function ()
         success = true,
         requires = {
             "core.dirman",
+            "core.neorgcmd",
+            "core.ui.calendar",
             "core.integrations.treesitter",
         },
     }
 end
 
 module.private = {
-    get_first_day_of_year = function (time)
-        print(time)
-        local beginning_year = os.time{
-            year = os.date("*t", time).year,
-            month = 1,
-            day = 1,
-        }
-        print(beginning_year)
-
-        local first_day = tonumber(
-            os.date("%w", beginning_year)
-        )
-        print(first_day)
-
-        -- correct sunday from 0 to 7
-        if (first_day == 0) then
-            first_day = 7
-        end
-        print(first_day)
-
-        return first_day
-    end,
-
-    get_day_add = function (time)
-        local d = module.private.get_first_day_of_year(time)
-
-        print(d)
-
-        if d < 5 then
-            return d - 2
-        else
-            return d - 9
-        end
-    end,
-
-    get_week_number = function (time)
-        local day_of_year = os.date("%j", time)
-        local day_add = module.private.get_day_add(time)
-        local corrected_day_of_year = day_of_year + day_add
-
-        if corrected_day_of_year < 0 then
-            -- week of last year - decide if 52 or 53
-            local last_year_begin = os.time{
-                year = os.date("*t", time).year - 1,
+    time_format_functions = {
+        get_first_day_of_year = function (time)
+            local beginning_year = os.time{
+                year = os.date("*t", time).year,
                 month = 1,
                 day = 1,
             }
-            local last_year_end = os.time{
-                year = os.date("*t", time).year - 1,
-                month = 12,
-                day = 31,
-            }
-            day_add = module.private.get_day_add(last_year_begin)
-            day_of_year = day_of_year + os.date("%j", last_year_end)
-            corrected_day_of_year = day_of_year + day_add
-          end
 
-        local week_num = math.floor(corrected_day_of_year / 7) + 1
-
-        if( (corrected_day_of_year > 0) and week_num == 53) then
-            -- check if it is not considered as part of week 1 of next year
-            local next_year_begin = os.time{
-                year = os.date("*t", time).year + 1,
-                month = 1,
-                day = 1,
-            }
-            local beginning_day_of_year = module.private.get_first_day_of_year(
-                next_year_begin
+            local first_day = tonumber(
+                os.date("%w", beginning_year)
             )
-            if beginning_day_of_year < 5  then
-                week_num = 1
-            end
-        end
 
-        return week_num
-    end,
+            -- correct sunday from 0 to 7
+            if (first_day == 0) then
+                first_day = 7
+            end
+
+            return first_day
+        end,
+
+        get_day_add = function (time)
+            local d = module.private.time_format_functions.get_first_day_of_year(time)
+
+            if d < 5 then
+                return d - 2
+            else
+                return d - 9
+            end
+        end,
+
+        get_week_number = function (time)
+            local day_of_year = os.date("%j", time)
+            local day_add = module.private.time_format_functions.get_day_add(time)
+            local corrected_day_of_year = day_of_year + day_add
+
+            if corrected_day_of_year < 0 then
+                -- week of last year - decide if 52 or 53
+                local last_year_begin = os.time{
+                    year = os.date("*t", time).year - 1,
+                    month = 1,
+                    day = 1,
+                }
+                local last_year_end = os.time{
+                    year = os.date("*t", time).year - 1,
+                    month = 12,
+                    day = 31,
+                }
+                day_add = module.private.time_format_functions.get_day_add(last_year_begin)
+                day_of_year = day_of_year + os.date("%j", last_year_end)
+                corrected_day_of_year = day_of_year + day_add
+              end
+
+            local week_num = math.floor(corrected_day_of_year / 7) + 1
+
+            if (corrected_day_of_year > 0) and week_num == 53 then
+                -- check if it is not considered as part of week 1 of next year
+                local next_year_begin = os.time{
+                    year = os.date("*t", time).year + 1,
+                    month = 1,
+                    day = 1,
+                }
+                local beginning_day_of_year = module.private.time_format_functions.get_first_day_of_year(
+                    next_year_begin
+                )
+                if beginning_day_of_year < 5  then
+                    week_num = 1
+                end
+            end
+
+            return week_num
+        end,
+    },
 
     get_template_path = function (template)
         return table.concat(template, config.pathsep)
@@ -120,28 +124,24 @@ module.private = {
     get_path = function (time, path)
         local date = os.date("*t", time)
 
-        local week = module.private.get_week_number(time)
+        local week = module.private.time_format_functions.get_week_number(time)
         local week_str = tostring(week)
         if week < 10 then
             week_str = "0" + week_str
         end
-        print(path)
+
         path = string.gsub(path, "%%W", week_str)
-        print(path)
 
         -- add 1 to round up and add 1 to go from 0-index to 1
-        local quarter = math.floor(date.month / 4) + 1 + 1
+        local quarter = math.floor(date.month / 4) + 2
         path = string.gsub(path, "%%Q", "0" + tostring(quarter))
-        print(path)
 
         return os.date(path, time)
     end,
 
     get_example_path = function (template)
-        print(template)
         local template_path = module.private.get_template_path(template)
 
-        print(template_path)
         local time = os.time {
             year = 1982,
             month = 11,
@@ -155,13 +155,17 @@ module.private = {
     end,
 
     open = function (time, mode)
-        local workspace = module.config.public.workspace or module.required["core.dirman"].get_current_workspace()[1]
+        local workspace = (
+            module.config.public.workspace
+            or module.required["core.dirman"].get_current_workspace()[1]
+        )
+
         local directory = module.config.public.directory
 
-        local template = module.config.private.templates[mode]
+        local template = module.config.public[mode].template_path
 
         local path_format = module.private.get_template_path(
-            template.path
+            template
         )
         local path = module.private.get_path(
             time,
@@ -173,7 +177,32 @@ module.private = {
 
         local file_exists = module.required["core.dirman"].file_exists(file_path)
 
-        print(file_path)
+        module.required["core.dirman"].create_file(
+            directory .. config.pathsep .. path,
+            workspace,
+            {
+                no_open = true,
+                force = false,
+                metadata = {
+                },
+            }
+        )
+
+        local template_path = (
+            directory .. config.pathsep
+            .. module.config.public.template_directory .. config.pathsep
+            .. module.config.public[mode].template_name
+        )
+
+        if
+            not file_exists
+            and module.config.public[mode].use_template
+            and module.required["core.dirman"].file_exists(
+                workspace_path .. config.pathsep .. template_path
+            )
+        then
+            vim.cmd("0read " .. workspace_path .. config.pathsep .. template_path .. "| w")
+        end
     end,
 }
 
@@ -183,10 +212,11 @@ module.public = {
 
 module.config.public = {
     directory = "chronicle",
-    workspace = nil,
+    template_directory = "templates",
+    workspace = "notes",
     daily = {
         use_template = true,
-        template_name = "",
+        template_name = "daily.norg",
         template_path = {
             "%Y",
             "%m-%B",
@@ -196,7 +226,7 @@ module.config.public = {
 
     },
     weekly = {
-        use_template = true,
+        use_template = false,
         template_name = "",
         template_path = {
             "%Y",
@@ -207,7 +237,7 @@ module.config.public = {
 
     },
     monthly = {
-        use_template = true,
+        use_template = false,
         template_name = "",
         template_path = {
             "%Y",
@@ -217,7 +247,7 @@ module.config.public = {
 
     },
     quarterly = {
-        use_template = true,
+        use_template = false,
         template_name = "",
         template_path = {
             "%Y",
@@ -227,7 +257,7 @@ module.config.public = {
 
     },
     yearly = {
-        use_template = true,
+        use_template = false,
         template_name = "",
         template_path = {
             "%Y",
@@ -237,35 +267,12 @@ module.config.public = {
 }
 
 module.config.private = {
-    templates = {
-        daily = {
-            path = {
-                "%Y-%m-%d.norg",
-            },
-        },
-        weekly = {
-            path = "%Y-%m-%d.norg",
-        },
-        monthly = {
-            path = "%Y-%m-%d.norg",
-        },
-        quarterly = {
-            path = "%Y-%m-%d.norg",
-        },
-        yearly = {
-            path = "%Y-%m-%d.norg",
-        },
-    }
 }
 
 module.on_event = function (event)
     if vim.tbl_contains( { "core.keybinds", "core.neorgcmd" }, event.split_type[1] ) then
-        if event.split_type[2] == "chronicle.daily" then
-            -- print(
-            --     module.private.get_example_path(
-            --         module.config.private.
-            --     )
-            -- )
+        if event.split_type[2] == "external.chronicle.daily.today" then
+            module.private.open(os.time(), "daily")
         elseif event.split_type[2] == "chronicle.weekly" then
         elseif event.split_type[2] == "chronicle.monthly" then
         elseif event.split_type[2] == "chronicle.quarterly" then
@@ -276,7 +283,8 @@ end
 
 module.events.subscribed = {
     ["core.neorgcmd"] = {
-        ["chronicle.daily"] = true,
+        ["external.chronicle"] = true,
+        ["external.chronicle.daily.today"] = true,
     },
 }
 
