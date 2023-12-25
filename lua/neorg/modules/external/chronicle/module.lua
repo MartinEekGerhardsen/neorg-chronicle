@@ -91,16 +91,19 @@ module.on_event = function (event)
 
         if event.split_type[2] == "external.chronicle.daily" then
             vim.print(event.split_type[2])
-            -- module.public.open(os.time(), "daily")
+            module.private.open_daily(event.content)
         elseif event.split_type[2] == "external.chronicle.weekly" then
             vim.print(event.split_type[2])
-            -- module.public.open(os.time(), "weekly")
+            module.private.open_weekly(event.content)
         elseif event.split_type[2] == "external.chronicle.monthly" then
             vim.print(event.split_type[2])
+            module.private.open_monthly(event.content)
         elseif event.split_type[2] == "external.chronicle.quarterly" then
             vim.print(event.split_type[2])
+            module.private.open_quarterly(event.content)
         elseif event.split_type[2] == "external.chronicle.yearly" then
             vim.print(event.split_type[2])
+            module.private.open_yearly(event.content)
         elseif event.split_type[2] == "external.chronicle.show" then
             vim.print(event.split_type[2])
         else
@@ -296,9 +299,9 @@ module.private = {
             -- first argument will be interpreted as day,
             -- second as month,
             -- and thirds as year
-            local day = arguments[1]
-            local month = arguments[2]
-            local year = arguments[3]
+            local day = tonumber(arguments[1])
+            local month = tonumber(arguments[2])
+            local year = tonumber(arguments[3])
 
             local current_time = os.time()
             local date = os.date("*t", current_time)
@@ -347,8 +350,8 @@ module.private = {
                 "weekly"
             )
         else
-            local week = arguments[1]
-            local year = arguments[2]
+            local week = tonumber(arguments[1])
+            local year = tonumber(arguments[2])
 
             local current_time = os.time()
             local date = os.date("*t", current_time)
@@ -392,88 +395,36 @@ module.private = {
                 ),
                 "monthly"
             )
-            -- if current_date.month == 1 then
-            --     return module.public.open(
-            --         os.time({
-            --             year = current_date.year - 1,
-            --             month = 12,
-            --             day = 1,
-            --         }),
-            --         "monthly"
-            --     )
-            -- else
-            --     return module.public.open(
-            --         os.time({
-            --             year = current_date.year,
-            --             month = current_date.month - 1,
-            --             day = 1,
-            --         }),
-            --         "monthly"
-            --     )
-            -- end
         elseif arguments[1] == "next" then
             return module.public.open(
                 module.private.wrapping_add_month(
-                    current_time, 1
+                    current_time,
+                    1
                 ),
                 "monthly"
             )
-            -- if current_date.month == 12 then
-            --     return module.public.open(
-            --         os.time({
-            --             year = current_date.year + 1,
-            --             month = 1,
-            --             day = 1,
-            --         }),
-            --         "monthly"
-            --     )
-            -- else
-            --     return module.public.open(
-            --         os.time({
-            --             year = current_date.year,
-            --             month = current_date.month - 1,
-            --             day = 1,
-            --         }),
-            --         "monthly"
-            --     )
-            -- end
         elseif string.sub(arguments[1], 1, 1) == "+" then
             local n_months = tonumber(string.sub(arguments[1], 2))
-            local n_years = math.floor(n_months / 12)
-            n_months = n_months % 12
-
-            local month = (current_date.month + n_months - 1) % 12 + 1
-            local year = current_date.year + n_years
-                    + math.floor((current_date.month + n_months - 1) / 12)
 
             return module.public.open(
-                os.time({
-                    year = year,
-                    month = month,
-                    day = 1,
-                }),
+                module.private.wrapping_add_month(
+                    current_time,
+                    n_months
+                ),
                 "monthly"
             )
         elseif string.sub(arguments[1], 1, 1) == "-" then
             local n_months = tonumber(string.sub(arguments[1], 2))
-            local n_years = math.floor(n_months / 12)
-            n_months = n_months % 12
-
-            local month = (current_date.month - n_months - 1) % 12 + 1
-            local year = current_date.year - n_years
-                    + math.floor((current_date.month - n_months - 1) / 12)
-
             return module.public.open(
-                os.time({
-                    year = year,
-                    month = month,
-                    day = 1,
-                }),
+                module.private.wrapping_add_month(
+                    current_time,
+                    n_months
+                ),
                 "monthly"
             )
         else
-            local month = arguments[1]
-            local year = arguments[2]
+            local month = tonumber(arguments[1])
+            local year = tonumber(arguments[2])
 
             return module.public.open(
                 os.time({
@@ -486,17 +437,6 @@ module.private = {
         end
     end,
 
-    --[[
-        completion = {
-            "current",
-            "previous",
-            "next",
-            "+",
-            "-",
-            "quarter",
-            "quarter year",
-        }
-    --]]
     open_quarterly = function(arguments)
         local current_time = os.time()
         local current_date = os.date("*t", current_time)
@@ -507,19 +447,119 @@ module.private = {
                 "quarterly"
             )
         elseif arguments[1] == "previous" then
-            local month = (current_date.month - 3 - 1) % 12 + 1
-            local year = current_date.year
-                    + math.floor((current_date.month - 3 - 1) / 12)
-
+            return module.public.open(
+                module.private.wrapping_add_month(
+                    current_time,
+                    -3
+                ),
+                "quarterly"
+            )
         elseif arguments[1] == "next" then
-
+            return module.public.open(
+                module.private.wrapping_add_month(
+                    current_time,
+                    3
+                ),
+                "quarterly"
+            )
         elseif string.sub(arguments[1], 1, 1) == "+" then
+            local n_quarters = string.sub(arguments[1], 2)
 
+            return module.public.open(
+                module.private.wrapping_add_month(
+                    current_time,
+                    3 * n_quarters
+                )
+            )
         elseif string.sub(arguments[1], 1, 1) == "-" then
+            local n_quarters = string.sub(arguments[1], 2)
 
+            return module.public.open(
+                module.private.wrapping_add_month(
+                    current_time,
+                    -3 * n_quarters
+                )
+            )
         else
-            local quarter = arguments[1]
-            local year = arguments[2]
+            local quarter = tonumber(arguments[1])
+            local year = tonumber(arguments[2])
+
+            local month = current_date.month
+
+            if quarter then
+                month = 3 * quarter
+            end
+
+            return module.public.open(
+                os.time({
+                    year = year or current_date.year,
+                    month = month,
+                    day = 1,
+                })
+            )
+        end
+    end,
+
+    open_yearly = function(arguments)
+        local current_time = os.time()
+        local current_date = os.date("*t", current_time)
+
+        if arguments[1] == "current" then
+            return module.public.open(
+                current_time,
+                "yearly"
+            )
+        elseif arguments[1] == "previous" then
+            return module.public.open(
+                os.time({
+                    year = current_date.year - 1,
+                    month = current_date.month,
+                    day = current_date.day,
+                }),
+                "yearly"
+            )
+        elseif arguments[1] == "next" then
+            return module.public.open(
+                os.time({
+                    year = current_date.year + 1,
+                    month = current_date.month,
+                    day = current_date.day,
+                }),
+                "yearly"
+            )
+        elseif string.sub(arguments[1], 1, 1) == "+" then
+            local n_years = tonumber(string.sub(arguments[1], 2))
+
+            return module.public.open(
+                os.time({
+                    year = current_date.year + n_years,
+                    month = current_date.month,
+                    day = current_date.day,
+                }),
+                "yearly"
+            )
+        elseif string.sub(arguments[1], 1, 1) == "-" then
+            local n_years = tonumber(string.sub(arguments[1], 2))
+
+            return module.public.open(
+                os.time({
+                    year = current_date.year - n_years,
+                    month = current_date.month,
+                    day = current_date.day,
+                }),
+                "yearly"
+            )
+        else
+            local year = tonumber(arguments[1])
+
+            return module.public.open(
+                os.time({
+                    year = year or current_date.year,
+                    month = current_date.month,
+                    day = current_date.day,
+                }),
+                "yearly"
+            )
         end
     end,
 }
@@ -548,34 +588,35 @@ module.public = {
         local workspace_path = module.required["core.dirman"].get_workspace(workspace)
         local file_path = workspace_path .. config.pathsep .. directory .. config.pathsep .. path
 
-        local file_exists = module.required["core.dirman"].file_exists(file_path)
-
-        module.required["core.dirman"].create_file(
-            directory .. config.pathsep .. path,
-            workspace,
-            {
-                no_open = true,
-                force = false,
-                metadata = {
-                },
-            }
-        )
-
-        local template_path = (
-            directory .. config.pathsep
-            .. module.config.public.template_directory .. config.pathsep
-            .. module.config.public[mode].template_name
-        )
-
-        if
-            not file_exists
-            and module.config.public[mode].use_template
-            and module.required["core.dirman"].file_exists(
-                workspace_path .. config.pathsep .. template_path
-            )
-        then
-            vim.cmd("0read " .. workspace_path .. config.pathsep .. template_path .. "| w")
-        end
+        print(file_path)
+        -- local file_exists = module.required["core.dirman"].file_exists(file_path)
+        --
+        -- module.required["core.dirman"].create_file(
+        --     directory .. config.pathsep .. path,
+        --     workspace,
+        --     {
+        --         no_open = true,
+        --         force = false,
+        --         metadata = {
+        --         },
+        --     }
+        -- )
+        --
+        -- local template_path = (
+        --     directory .. config.pathsep
+        --     .. module.config.public.template_directory .. config.pathsep
+        --     .. module.config.public[mode].template_name
+        -- )
+        --
+        -- if
+        --     not file_exists
+        --     and module.config.public[mode].use_template
+        --     and module.required["core.dirman"].file_exists(
+        --         workspace_path .. config.pathsep .. template_path
+        --     )
+        -- then
+        --     vim.cmd("0read " .. workspace_path .. config.pathsep .. template_path .. "| w")
+        -- end
     end,
 }
 
