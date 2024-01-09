@@ -4,9 +4,15 @@ local config, lib, log, modules = neorg.config, neorg.lib, neorg.log, neorg.modu
 local module = neorg.modules.create("external.chronicle")
 
 module.load = function()
+    local core_subcommands = module.config.private.core_modes.daily.subcommands
+
+    local custom_subcommands
+
     module.required["core.neorgcmd"].add_commands_from_table({
         chronicle = {
             subcommands = {
+
+
                 daily = {
                     max_args = 3,
                     name = "external.chronicle.daily",
@@ -60,6 +66,7 @@ module.load = function()
                         },
                     },
                 },
+                table.unpack(module.config.public.modes)
             },
         },
     })
@@ -516,6 +523,17 @@ module.config.public = {
     directory = "chronicle",
     -- template_directory = "templates",
 
+    modes = {
+        daily = {
+            path_format = {
+                "%Y",
+                "%m-%B",
+                "%d-%A",
+                "daily.norg",
+            }
+        }
+    },
+
     daily = {
         -- use_template = false,
         -- template_name = "daily.norg",
@@ -565,6 +583,27 @@ module.config.public = {
 }
 
 module.config.private = {
+    core_modes = {
+        daily = {
+            subcommands = {
+                tomorrow = { args = 0, name = "chronicle.tomorrow" },
+                yesterday = { args = 0, name = "chronicle.yesterday" },
+                today = { args = 0, name = "chronicle.today" },
+                custom = { max_args = 1, name = "chronicle.custom" },
+                template = { args = 0, name = "chronicle.template" },
+                toc = {
+                    args = 1,
+                    name = "chronicle.toc",
+                    subcommands = {
+                        open = { args = 0, name = "chronicle.toc.open" },
+                        update = { args = 0, name = "chronicle.toc.update" },
+                    },
+                },
+            },
+        },
+    },
+
+
     daily = {
         completions = {
             "today",

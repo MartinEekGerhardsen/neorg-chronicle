@@ -21,11 +21,11 @@ version: 1.1.1
 
      @code lua
      local M = {
-     "nvim-neorg/neorg",
-     ft = "norg",
-     dependencies = {
-     { "" },
-     },
+         "nvim-neorg/neorg",
+         ft = "norg",
+         dependencies = {
+             { "MartinEekGerhardsen/neorg-chronicle" },
+         },
      }
      @end
 
@@ -42,45 +42,45 @@ version: 1.1.1
     -- add this with the rest of your neorg modules and plugins
     -- here are the default options
     ["external.chronicle"] = {
-    workspace = nil,
-    directory = "chronicle",
+        workspace = nil,
+        directory = "chronicle",
 
-    daily = {
-    template_path = {
-    "%Y",
-    "%m-%B",
-    "%d-%A",
-    "daily.norg",
-    },
-    },
-    weekly = {
-    template_path = {
-    "%Y",
-    "%m-%B",
-    "%W",
-    "weekly.norg",
-    },
-    },
-    monthly = {
-    template_path = {
-    "%Y",
-    "%m-%B",
-    "monthly.norg",
-    },
-    },
-    quarterly = {
-    template_path = {
-    "%Y",
-    "%Q",
-    "quarterly.norg",
-    },
-    },
-    yearly = {
-    template_path = {
-    "%Y",
-    "yearly.norg",
-    },
-    },
+        daily = {
+            template_path = {
+                "%Y",
+                "%m-%B",
+                "%d-%A",
+                "daily.norg",
+            },
+        },
+        weekly = {
+            template_path = {
+                "%Y",
+                "%m-%B",
+                "%W",
+                "weekly.norg",
+            },
+        },
+        monthly = {
+            template_path = {
+                "%Y",
+                "%m-%B",
+                "monthly.norg",
+            },
+        },
+        quarterly = {
+            template_path = {
+                "%Y",
+                "%Q",
+                "quarterly.norg",
+            },
+        },
+        yearly = {
+            template_path = {
+                "%Y",
+                "yearly.norg",
+            },
+        },
 
     }
     @end
@@ -110,8 +110,8 @@ version: 1.1.1
      Each of these has a table of configuration, which for now looks like:
 
      @code lua
-     {
-     template_path = { "path", "to", "file.norg" },
+     mode = {
+         template_path = { "path", "to", "file.norg" },
      }
      @end
 
@@ -129,8 +129,9 @@ version: 1.1.1
       For convenience, all tags are listed here.
 
       @table
+      | --- | ---------------------------------------- |
       | tag | description                              |
-      | -   | -                                        |
+      | --- | ---------------------------------------- |
       | %a  | abbreviated weekday name (e.g., Wed)     |
       | %A  | full weekday name (e.g., Wednesday)      |
       | %b  | abbreviated month name (e.g., Sep)       |
@@ -151,6 +152,7 @@ version: 1.1.1
       | %W  | week of the year (09) [01-53]            |
       | %Q  | quarter of the year (03) [01-04]         |
       | %%  | the character `%´                        |
+      | --- | ---------------------------------------- |
       @end
 
       If a formatted path doesn't exist already, then it will be created.
@@ -174,6 +176,7 @@ version: 1.1.1
    --- ( ) Basic implementation based on current `core.journal`
    --- ( ) Investigate potential integration with `external.templates`
    --- ( ) Potentially integrate with other neovim templating engines
+   -- ( ) Implement `core.journal` subcommands directly
    - ( ) Have UI calendar functionality for all modes
    - ( ) Generalise modes for custom user modes
    - ( ) Improve how the new tags are replaced from format path
